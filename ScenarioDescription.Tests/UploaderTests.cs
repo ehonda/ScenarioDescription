@@ -48,6 +48,7 @@ public class UploaderTests
         // Act
 
         // Assert
-        scenario.Data.Skus.Should().Contain("invalid");
+        // Deliberately fail so we see something in dotnet test output
+        scenario.Data.Skus.Should().NotContain("invalid");
     }
 }
