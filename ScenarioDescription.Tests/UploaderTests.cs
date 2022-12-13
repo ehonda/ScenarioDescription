@@ -2,36 +2,52 @@
 
 namespace ScenarioDescription.Tests;
 
+public record Scenario<TData>(TData Data)
+{
+    public ScenarioWithDescription<TData> WithDescription(string description) => new(Data, description);
+}
+
+public record ScenarioWithDescription<TData>(TData Data, string? Description = null) : Scenario<TData>(Data)
+{
+    // TODO: Don't print empty Description in fallback case
+    public override string ToString() => Description ?? base.ToString();
+}
+
+public static class Extensions
+{
+    public static Scenario<TData> AsScenario<TData>(this TData data) => new(data);
+}
+
 public class UploaderTests
 {
     public static class Data
     {
-        public record Scenario(IReadOnlyList<string> Skus);
-        
-        public record ScenarioWithDescription(IReadOnlyList<string> Skus, string? Description = null) : Scenario(Skus)
-        {
-            // TODO: Don't print empty Description in fallback case
-            public override string ToString() => Description ?? base.ToString();
-        }
+        public record ScenarioData(IReadOnlyList<string> Skus);
 
-        public static IEnumerable<ScenarioWithDescription> WithInvalidSkus => new ScenarioWithDescription[]
+        public static IEnumerable<Scenario<ScenarioData>> WithInvalidSkus => new[]
         {
-            new(new List<string> { "invalid" }, "One invalid value"),
-            new(new List<string> { "valid", "invalid" }, "One invalid, one valid value"),
-            new(new List<string> { "invalid", "valid", "invalid" }),
+            // Bad
+            // new Scenario<ScenarioData>(new(new List<string> { "invalid" })).WithDescription("One invalid value"),
+            // new Scenario<ScenarioData>(new(new List<string> { "valid", "invalid" })).WithDescription("One invalid, one valid value"),
+            // new(new(new List<string> { "invalid", "valid", "invalid" })),
+            
+            // Better
+            new ScenarioData(new List<string> { "invalid" }).AsScenario().WithDescription("One invalid value"),
+            new ScenarioData(new List<string> { "valid", "invalid" }).AsScenario().WithDescription("One invalid, one valid value"),
+            new ScenarioData(new List<string> { "invalid", "valid", "invalid" }).AsScenario(),
         };
     }
 
     [Test]
-    [Description("TEST_CASE_DESCRIPTION")]
+    [Description("With invalid skus")]
     public void Upload_works([ValueSource(typeof(Data), nameof(Data.WithInvalidSkus))]
-        Data.ScenarioWithDescription scenarioWithDescription)
+        Scenario<Data.ScenarioData> scenario)
     {
         // Arrange
-        
+
         // Act
 
         // Assert
-        true.Should().BeTrue();
+        scenario.Data.Skus.Should().Contain("invalid");
     }
 }
