@@ -18,7 +18,7 @@ public static class Extensions
     public static Scenario<TData> AsScenario<TData>(this TData data) => new(data);
 }
 
-public class UploaderTests
+public class UploaderTestsWithScenarios
 {
     public static class Data
     {
